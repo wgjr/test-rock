@@ -43,20 +43,19 @@ services:
     networks:
       - ecommerce
 
-#  frontend:
-#    build:
-#      context: ./frontend
-#      dockerfile: Dockerfile
-#    container_name: ecommerce_frontend
-#    restart: unless-stopped
-#    ports:
-#      - "5173:5173"
-#    volumes:
-#      - ./frontend:/app
-#      - /app/node_modules
-#    networks:
-#      - ecommerce
-#    command: sh -c "npm install && npm run dev -- --host"
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - ecommerce
 
 volumes:
   mysql_data:
