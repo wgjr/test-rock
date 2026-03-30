@@ -44,9 +44,9 @@ class CategoryController extends Controller
      *     )
      * )
      */
-    public function index(): CategoryCollection
+    public function index(): JsonResponse
     {
-        return new CategoryCollection($this->categoryService->list());
+        return response()->json(new CategoryCollection($this->categoryService->list()));
     }
 
     /**

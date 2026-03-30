@@ -57,8 +57,8 @@ it('shows a single product with its category', function () {
         ->assertJsonPath('data.category.name', 'Eletrônicos');
 });
 
-it('creates a product for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('creates a product for admin users', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
     $category = Category::factory()->create(['name' => 'Eletrônicos']);
 
     $response = $this->postJson('/api/v1/products', [
@@ -79,8 +79,19 @@ it('creates a product for authenticated users', function () {
     expect(Product::query()->where('name', 'Teclado Mecânico')->exists())->toBeTrue();
 });
 
+it('forbids non-admin users from creating products', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'user']));
+    $category = Category::factory()->create();
+
+    $this->postJson('/api/v1/products', [
+        'name' => 'Teclado',
+        'price' => 100,
+        'category_id' => $category->id,
+    ])->assertForbidden();
+});
+
 it('validates product payload on creation', function () {
-    Sanctum::actingAs(User::factory()->create());
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
 
     $this->postJson('/api/v1/products', [
         'name' => '',
@@ -92,8 +103,8 @@ it('validates product payload on creation', function () {
         ->assertJsonValidationErrors(['name', 'price', 'category_id', 'image_url']);
 });
 
-it('updates a product for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('updates a product for admin users', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
     $oldCategory = Category::factory()->create(['name' => 'Acessórios']);
     $newCategory = Category::factory()->create(['name' => 'Periféricos']);
     $product = Product::factory()->create([
@@ -117,8 +128,19 @@ it('updates a product for authenticated users', function () {
     expect($product->fresh()->name)->toBe('Headset Wireless');
 });
 
-it('deletes a product for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('forbids non-admin users from updating products', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'user']));
+    $product = Product::factory()->create();
+
+    $this->putJson("/api/v1/products/{$product->id}", [
+        'name' => 'Novo nome',
+        'price' => 10,
+        'category_id' => $product->category_id,
+    ])->assertForbidden();
+});
+
+it('deletes a product for admin users', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
     $product = Product::factory()->create();
 
     $this->deleteJson("/api/v1/products/{$product->id}")
@@ -127,6 +149,15 @@ it('deletes a product for authenticated users', function () {
         ->assertJsonPath('message', 'Product deleted successfully.');
 
     expect(Product::find($product->id))->toBeNull();
+});
+
+it('forbids non-admin users from deleting products', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'user']));
+    $product = Product::factory()->create();
+
+    $this->deleteJson("/api/v1/products/{$product->id}")->assertForbidden();
+
+    expect(Product::find($product->id))->not->toBeNull();
 });
 
 it('requires authentication to mutate products', function () {

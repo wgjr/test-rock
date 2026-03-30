@@ -103,11 +103,11 @@ class ProductController extends Controller
      *     )
      * )
      */
-    public function index(IndexProductRequest $request): ProductCollection
+    public function index(IndexProductRequest $request): JsonResponse
     {
         $products = $this->productService->list($request->validated());
 
-        return new ProductCollection($products);
+        return response()->json(new ProductCollection($products));
     }
 
     /**

@@ -32,10 +32,10 @@ services:
     container_name: ecommerce_mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ecommerce
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: secret
-      MYSQL_USER: laravel
+      MYSQL_DATABASE: ${DB_DATABASE:-ecommerce}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
     ports:
       - "3307:3306"
     volumes:

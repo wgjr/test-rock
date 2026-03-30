@@ -32,9 +32,11 @@ export function Header() {
           <NavLink to="/" className={({ isActive }) => navClassName(isActive)} end>
             Novidades
           </NavLink>
-          <NavLink to="/admin" className={({ isActive }) => navClassName(isActive)}>
-            Painel
-          </NavLink>
+          {user?.role === 'admin' ? (
+            <NavLink to="/admin" className={({ isActive }) => navClassName(isActive)}>
+              Painel
+            </NavLink>
+          ) : null}
           {!isAuthenticated ? (
             <>
               <NavLink to="/login" className={({ isActive }) => navClassName(isActive)}>

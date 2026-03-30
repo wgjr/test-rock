@@ -3,59 +3,44 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
     /**
      * @param array $data
-     * @return array
+     * @return array{user: User, token: string}
      */
     public function register(array $data): array
     {
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'],
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
             'user' => $user,
-            'token' => $token
+            'token' => $token,
         ];
     }
 
     /**
-     * @param array $data
-     * @return array
+     * @return array{user: User, token: string}
      */
-    public function login(array $data): array
+    public function createTokenForUser(User $user): array
     {
-        if (!Auth::attempt($data)) {
-            throw ValidationException::withMessages([
-                'email' => ['Invalid credentials']
-            ]);
-        }
-
-        $user = Auth::user();
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
             'user' => $user,
-            'token' => $token
+            'token' => $token,
         ];
     }
 
-    /**
-     * @return void
-     */
-    public function logout(): void
+    public function logout(User $user): void
     {
-        auth()->user()->tokens()->delete();
+        $user->tokens()->delete();
     }
 }

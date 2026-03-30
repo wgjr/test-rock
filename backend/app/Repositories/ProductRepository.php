@@ -14,23 +14,27 @@ class ProductRepository implements ProductRepositoryInterface
      */
     public function paginateWithFilters(array $filters): LengthAwarePaginator
     {
-        $perPage = (int)($filters['per_page'] ?? 10);
-        $perPage = min(max($perPage, 1), 50);
+        $perPage = (int) ($filters['per_page'] ?? 10);
 
         $query = Product::query()
             ->with('category');
 
         if (!empty($filters['category'])) {
-            $query->where('category_id', (int)$filters['category']);
+            $query->where('category_id', (int) $filters['category']);
         }
 
         if (!empty($filters['search'])) {
             $search = trim($filters['search']);
+            $driver = $query->getConnection()->getDriverName();
 
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
+            if (in_array($driver, ['mysql', 'pgsql'], true)) {
+                $query->whereFullText(['name', 'description'], $search);
+            } else {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
         }
 
         $sort = $filters['sort'] ?? 'created_at';

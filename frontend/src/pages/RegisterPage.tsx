@@ -12,6 +12,7 @@ export function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      await register({ name, email, password });
+      await register({ name, email, password, password_confirmation: passwordConfirmation });
       setSuccess('Cadastro realizado com sucesso.');
       navigate('/login');
     } catch (err) {
@@ -59,7 +60,25 @@ export function RegisterPage() {
           {success ? <Alert text={success} tone="success" /> : null}
           <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} required />
           <Input label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input label="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Input
+            label="Senha"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={12}
+            autoComplete="new-password"
+          />
+          <p className="text-xs text-slate-500">Mínimo 12 caracteres, com letras maiúsculas e minúsculas e pelo menos um número.</p>
+          <Input
+            label="Confirmar senha"
+            type="password"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            required
+            minLength={12}
+            autoComplete="new-password"
+          />
           <Button type="submit" className="w-full" loading={loading}>
             Criar conta
           </Button>

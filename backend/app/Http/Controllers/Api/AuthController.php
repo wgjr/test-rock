@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\AuthService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
     public function __construct(
         private AuthService $authService
-    )
-    {
+    ) {
     }
 
     /**
@@ -23,26 +24,27 @@ class AuthController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"email","password"},
+     *             required={"email","password","password_confirmation"},
      *             @OA\Property(property="name", type="string", example="User"),
      *             @OA\Property(property="email", type="string", example="user@email.com"),
-     *             @OA\Property(property="password", type="string", example="123456")
+     *             @OA\Property(property="password", type="string", example="MySecurePass1"),
+     *             @OA\Property(property="password_confirmation", type="string", example="MySecurePass1")
      *         )
      *     ),
      *     @OA\Response(
-     *         response=200,
+     *         response=201,
      *         description="User registered successfully"
      *     )
      * )
      */
-    public function register(RegisterRequest $request)
+    public function register(RegisterRequest $request): JsonResponse
     {
         $data = $this->authService->register($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'User registered successfully',
-            'data' => $data
+            'data' => $data,
         ], 201);
     }
 
@@ -56,7 +58,7 @@ class AuthController extends Controller
      *         @OA\JsonContent(
      *             required={"email","password"},
      *             @OA\Property(property="email", type="string", example="user@email.com"),
-     *             @OA\Property(property="password", type="string", example="123456")
+     *             @OA\Property(property="password", type="string", example="password")
      *         )
      *     ),
      *     @OA\Response(
@@ -65,24 +67,26 @@ class AuthController extends Controller
      *     )
      * )
      */
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request): JsonResponse
     {
-        $data = $this->authService->login($request->validated());
+        $request->authenticate();
+
+        $data = $this->authService->createTokenForUser($request->user());
 
         return response()->json([
             'success' => true,
             'message' => 'Login successful',
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
-    public function logout()
+    public function logout(Request $request): JsonResponse
     {
-        $this->authService->logout();
+        $this->authService->logout($request->user());
 
         return response()->json([
             'success' => true,
-            'message' => 'Logged out successfully'
+            'message' => 'Logged out successfully',
         ]);
     }
 }

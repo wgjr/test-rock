@@ -58,11 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       async register(payload) {
         const response = await registerRequest(payload);
-
-        if (response.token) {
-          setToken(response.token);
-        }
-
+        setToken(response.token);
         setUser(response.user);
       },
       logout() {

@@ -39,20 +39,32 @@ export function AdminPage() {
   const [productForm, setProductForm] = useState<ProductFormState>(initialProductForm);
   const [submittingCategory, setSubmittingCategory] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState(false);
+  const [productPage, setProductPage] = useState(1);
+  const [productTotalPages, setProductTotalPages] = useState(1);
+  const [productTotal, setProductTotal] = useState(0);
 
   const sortedProducts = useMemo(() => [...products].sort((a, b) => b.id - a.id), [products]);
 
-  async function loadData() {
+  async function loadData(page = productPage) {
     setLoading(true);
     setError('');
 
     try {
       const [loadedCategories, loadedProducts] = await Promise.all([
         getCategories(),
-        getProducts({ page: 1, per_page: 50, sort: 'created_at', direction: 'desc' }),
+        getProducts({
+          page,
+          per_page: 20,
+          sort: 'created_at',
+          direction: 'desc',
+        }),
       ]);
       setCategories(loadedCategories);
       setProducts(loadedProducts.items);
+      const meta = loadedProducts.meta;
+      setProductTotalPages(meta?.last_page ?? 1);
+      setProductTotal(meta?.total ?? loadedProducts.items.length);
+      setProductPage(page);
     } catch (err) {
       setError(getErrorMessage(err, 'Não foi possível carregar a área administrativa.'));
     } finally {
@@ -61,7 +73,7 @@ export function AdminPage() {
   }
 
   useEffect(() => {
-    loadData();
+    loadData(1);
   }, []);
 
   function resetMessages() {
@@ -94,6 +106,17 @@ export function AdminPage() {
 
   async function handleDeleteCategory(id: number) {
     resetMessages();
+
+    const category = categories.find((c) => c.id === id);
+    const productCount = products.filter((p) => p.category?.id === id).length;
+    const message =
+      productCount > 0
+        ? `Excluir "${category?.name}"? Isso também removerá ${productCount} produto(s) vinculado(s) visíveis nesta página e todos os demais produtos desta categoria no servidor. Esta ação não pode ser desfeita.`
+        : `Excluir a categoria "${category?.name}"? Se existirem produtos nesta categoria, eles serão removidos em cascata. Esta ação não pode ser desfeita.`;
+
+    if (!window.confirm(message)) {
+      return;
+    }
 
     try {
       await deleteCategory(id);
@@ -137,6 +160,15 @@ export function AdminPage() {
 
   async function handleDeleteProduct(id: number) {
     resetMessages();
+
+    const product = products.find((p) => p.id === id);
+    if (
+      !window.confirm(
+        `Excluir o produto "${product?.name ?? '#' + id}"? Esta ação não pode ser desfeita.`,
+      )
+    ) {
+      return;
+    }
 
     try {
       await deleteProduct(id);
@@ -316,13 +348,39 @@ export function AdminPage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">Produtos cadastrados</p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">Lista rápida para manutenção</h2>
               </div>
-              <span className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">{products.length} itens</span>
+              <span className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">
+                {productTotal} produto{productTotal === 1 ? '' : 's'}
+                {productTotalPages > 1 ? ` · página ${productPage} de ${productTotalPages}` : ''}
+              </span>
             </div>
 
             {sortedProducts.length === 0 ? (
               <EmptyState title="Sem produtos" description="Crie o primeiro produto para visualizar a lista aqui." />
             ) : (
               <div className="space-y-3">
+                {productTotalPages > 1 ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={productPage <= 1}
+                      onClick={() => loadData(productPage - 1)}
+                    >
+                      Anterior
+                    </Button>
+                    <span className="text-sm text-slate-600">
+                      Página {productPage} de {productTotalPages}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={productPage >= productTotalPages}
+                      onClick={() => loadData(productPage + 1)}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                ) : null}
                 {sortedProducts.map((product) => (
                   <div key={product.id} className="rounded-2xl border border-slate-200 p-4">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

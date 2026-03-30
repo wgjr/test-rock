@@ -14,7 +14,8 @@ it('registers a user and returns a token', function () {
     $response = $this->postJson('/api/v1/auth/register', [
         'name' => 'Maria Silva',
         'email' => 'maria@example.com',
-        'password' => 'secret123',
+        'password' => 'SecurePass123',
+        'password_confirmation' => 'SecurePass123',
     ]);
 
     $response
@@ -23,17 +24,18 @@ it('registers a user and returns a token', function () {
         ->assertJsonPath('message', 'User registered successfully')
         ->assertJsonPath('data.user.name', 'Maria Silva')
         ->assertJsonPath('data.user.email', 'maria@example.com')
+        ->assertJsonPath('data.user.role', 'user')
         ->assertJsonStructure([
             'success',
             'message',
             'data' => [
-                'user' => ['id', 'name', 'email', 'created_at', 'updated_at'],
+                'user' => ['id', 'name', 'email', 'role', 'created_at', 'updated_at'],
                 'token',
             ],
         ]);
 
     expect(User::query()->where('email', 'maria@example.com')->exists())->toBeTrue();
-    expect(Hash::check('secret123', User::first()->password))->toBeTrue();
+    expect(Hash::check('SecurePass123', User::first()->password))->toBeTrue();
 });
 
 it('validates required fields on registration', function () {
@@ -42,6 +44,28 @@ it('validates required fields on registration', function () {
     $response
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['name', 'email', 'password']);
+});
+
+it('validates password confirmation and strength on registration', function () {
+    $response = $this->postJson('/api/v1/auth/register', [
+        'name' => 'Maria Silva',
+        'email' => 'maria@example.com',
+        'password' => 'SecurePass123',
+        /** Intentionally wrong confirmation */
+        'password_confirmation' => 'OtherPass123',
+    ]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('password');
+
+    $weak = $this->postJson('/api/v1/auth/register', [
+        'name' => 'Maria Silva',
+        'email' => 'weak@example.com',
+        'password' => 'alllowercase12345',
+        'password_confirmation' => 'alllowercase12345',
+    ]);
+
+    /** Missing uppercase */
+    $weak->assertUnprocessable()->assertJsonValidationErrors('password');
 });
 
 it('logs in a user and returns a token', function () {
@@ -60,11 +84,12 @@ it('logs in a user and returns a token', function () {
         ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Login successful')
         ->assertJsonPath('data.user.id', $user->id)
+        ->assertJsonPath('data.user.role', 'user')
         ->assertJsonStructure([
             'success',
             'message',
             'data' => [
-                'user' => ['id', 'name', 'email', 'created_at', 'updated_at'],
+                'user' => ['id', 'name', 'email', 'role', 'created_at', 'updated_at'],
                 'token',
             ],
         ]);

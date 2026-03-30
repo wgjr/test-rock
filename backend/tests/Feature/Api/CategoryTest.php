@@ -43,8 +43,8 @@ it('returns not found when category does not exist', function () {
     $this->getJson('/api/v1/categories/999999')->assertNotFound();
 });
 
-it('creates a category for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('creates a category for admin users', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
 
     $response = $this->postJson('/api/v1/categories', [
         'name' => 'Limpeza',
@@ -59,8 +59,14 @@ it('creates a category for authenticated users', function () {
     expect(Category::query()->where('name', 'Limpeza')->exists())->toBeTrue();
 });
 
+it('forbids non-admin users from creating categories', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'user']));
+
+    $this->postJson('/api/v1/categories', ['name' => 'Limpeza'])->assertForbidden();
+});
+
 it('validates unique category name on creation', function () {
-    Sanctum::actingAs(User::factory()->create());
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
     Category::factory()->create(['name' => 'Limpeza']);
 
     $this->postJson('/api/v1/categories', ['name' => 'Limpeza'])
@@ -72,8 +78,8 @@ it('requires authentication to create a category', function () {
     $this->postJson('/api/v1/categories', ['name' => 'Limpeza'])->assertUnauthorized();
 });
 
-it('updates a category for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('updates a category for admin users', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
     $category = Category::factory()->create(['name' => 'Informática']);
 
     $this->putJson("/api/v1/categories/{$category->id}", [
@@ -87,8 +93,15 @@ it('updates a category for authenticated users', function () {
     expect($category->fresh()->name)->toBe('Periféricos');
 });
 
-it('deletes a category for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('forbids non-admin users from updating categories', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'user']));
+    $category = Category::factory()->create(['name' => 'Informática']);
+
+    $this->putJson("/api/v1/categories/{$category->id}", ['name' => 'Hackeado'])->assertForbidden();
+});
+
+it('deletes a category for admin users', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
     $category = Category::factory()->create();
 
     $this->deleteJson("/api/v1/categories/{$category->id}")
@@ -97,4 +110,13 @@ it('deletes a category for authenticated users', function () {
         ->assertJsonPath('message', 'Category deleted successfully.');
 
     expect(Category::find($category->id))->toBeNull();
+});
+
+it('forbids non-admin users from deleting categories', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'user']));
+    $category = Category::factory()->create();
+
+    $this->deleteJson("/api/v1/categories/{$category->id}")->assertForbidden();
+
+    expect(Category::find($category->id))->not->toBeNull();
 });

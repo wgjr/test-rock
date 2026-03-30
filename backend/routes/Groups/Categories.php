@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [CategoryController::class, 'index']);
 Route::get('/{id}', [CategoryController::class, 'show']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'can:admin'])->group(function () {
     Route::post('/', [CategoryController::class, 'store']);
     Route::put('/{id}', [CategoryController::class, 'update']);
     Route::delete('/{id}', [CategoryController::class, 'destroy']);

@@ -43,7 +43,7 @@ function normalizeAuthResponse(response: RawAuthResponse, fallbackEmail: string)
         });
 
   if (!token) {
-    throw new Error('A API não retornou um token de autenticação no login.');
+    throw new Error('A API não retornou um token de autenticação.');
   }
 
   return { token, user };
@@ -56,22 +56,5 @@ export async function login(payload: AuthPayload) {
 
 export async function register(payload: AuthPayload) {
   const { data } = await api.post<RawAuthResponse>('/auth/register', payload);
-
-  const token =
-    data.token ??
-    data.access_token ??
-    data.plainTextToken ??
-    data.data?.token ??
-    data.data?.access_token ??
-    data.data?.plainTextToken ??
-    null;
-
-  const user =
-    data.user ??
-    data.data?.user ?? {
-      name: payload.name,
-      email: payload.email,
-    };
-
-  return { token, user };
+  return normalizeAuthResponse(data, payload.email);
 }
