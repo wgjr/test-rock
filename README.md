@@ -83,6 +83,13 @@ Authorization: Bearer {token}
 
 ---
 
+## Acesso administrativo
+
+email: admin@example.com
+senha: password
+
+---
+
 ## 📡 Endpoints Principais
 
 ### Produtos
