@@ -14,7 +14,7 @@ Este projeto implementa um catálogo de produtos com:
 - Autenticação de usuários
 - Consumo de API REST padronizada
 
-Toda a aplicação roda isoladamente via Docker.
+Toda a aplicação roda isoladamente via Docker, com duas opções de frontend e duas opções de backend.
 
 ---
 
@@ -22,10 +22,10 @@ Toda a aplicação roda isoladamente via Docker.
 
 | Camada       | Tecnologia              |
 |-------------|------------------------|
-| Backend     | Laravel (PHP)          |
-| Frontend    | React + Vite           |
+| Backend     | Laravel (PHP) / NestJS (Node.js) |
+| Frontend    | React + Vite / Vue + Vite |
 | Banco       | MySQL                  |
-| Auth        | Laravel Sanctum        |
+| Auth        | Sanctum / JWT          |
 | Docs API    | Swagger / OpenAPI      |
 | Observabilidade | Laravel Telescope |
 | Infra       | Docker + Docker Compose|
@@ -42,7 +42,7 @@ docker compose up -d --build
 
 ---
 
-### 🔧 Comandos backend (Opicional o setup do docker composer já executa a suite de comandos)
+### 🔧 Comandos backend Laravel (Opicional o setup do docker composer já executa a suite de comandos)
 
 ```bash
 docker compose exec app composer install
@@ -64,6 +64,37 @@ docker compose exec app php artisan test
 
 ---
 
+## 🔧 Backend Node.js
+
+Backend alternativo em NestJS disponível em:
+
+```bash
+http://localhost:8001/api/v1
+```
+
+Principais rotas:
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/logout`
+- `GET /products`
+- `GET /products/{id}`
+- `POST /products`
+- `PUT /products/{id}`
+- `DELETE /products/{id}`
+- `GET /categories`
+- `GET /categories/{id}`
+- `POST /categories`
+- `PUT /categories/{id}`
+- `DELETE /categories/{id}`
+
+Credenciais iniciais:
+
+- email: `admin@example.com`
+- senha: `password`
+
+---
+
 ##
 
 ## 🔐 Autenticação
@@ -72,8 +103,8 @@ A aplicação utiliza autenticação baseada em token com Sanctum.
 
 ### Endpoints:
 
-- `POST /api/register` → Cadastro de usuário
-- `POST /api/login` → Login e geração de token
+- `POST /api/v1/auth/register` → Cadastro de usuário
+- `POST /api/v1/auth/login` → Login e geração de token
 
 O token deve ser enviado nas requisições autenticadas via header:
 
@@ -94,14 +125,14 @@ Authorization: Bearer {token}
 
 ### Produtos
 
-- `GET /api/products` → Listagem paginada
-- `GET /api/products/{id}` → Detalhe do produto
-- `GET /api/products?category={id}` → Filtro por categoria
-- `GET /api/products?search={query}` → Busca
+- `GET /api/v1/products` → Listagem paginada
+- `GET /api/v1/products/{id}` → Detalhe do produto
+- `GET /api/v1/products?category={id}` → Filtro por categoria
+- `GET /api/v1/products?search={query}` → Busca
 
 ### Categorias
 
-- `GET /api/categories` → Listagem de categorias
+- `GET /api/v1/categories` → Listagem de categorias
 
 ---
 
@@ -133,10 +164,19 @@ http://localhost:8000/telescope
 
 ## 🖥️ Frontend
 
-Interface disponível em:
+Interfaces disponíveis em:
 
 ```
-http://localhost:5173
+React: http://localhost:5173
+Vue:   http://localhost:5174
+```
+
+Por padrão, os frontends usam o backend Laravel em `http://localhost:8000/api/v1`.
+
+Para subir React e Vue apontando para o backend Node.js:
+
+```bash
+FRONTEND_API_URL=http://localhost:8001/api/v1 docker compose up -d --build
 ```
 
 ---
@@ -145,9 +185,11 @@ http://localhost:5173
 
 ```
 .
-├── backend     # API Laravel (Service + Repository)
-├── frontend    # Aplicação React
-├── docker      # Configuração de containers
+├── backend      # API Laravel (Service + Repository)
+├── backend-node # API Node.js com NestJS
+├── frontend     # Aplicação React
+├── frontend-vue # Aplicação Vue.js
+├── docker       # Configuração de containers
 └── docker-compose.yml
 ```
 

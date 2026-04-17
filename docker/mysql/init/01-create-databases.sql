@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS ecommerce_node;
+GRANT ALL PRIVILEGES ON ecommerce_node.* TO 'laravel'@'%';
+FLUSH PRIVILEGES;
